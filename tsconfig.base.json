@@ -18,7 +18,8 @@
       "@hamoye/flight-angular/auth": ["libs/flight-angular/auth/src/index.ts"],
       "@hamoye/flight-angular/ui": ["libs/flight-angular/ui/src/index.ts"],
       "@hamoye/flight-react/auth": ["libs/flight-react/auth/src/index.ts"],
-      "@hamoye/flight-react/ui": ["libs/flight-react/ui/src/index.ts"]
+      "@hamoye/flight-react/ui": ["libs/flight-react/ui/src/index.ts"],
+      "@hamoye/shared/data-access": ["libs/shared/data-access/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]

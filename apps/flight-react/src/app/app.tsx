@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { Dashboard, Login } from '@hamoye/flight-react/ui';
+import { Dashboard, Login, Test } from '@hamoye/flight-react/ui';
 import styles from './app.module.css';
 
 import NxWelcome from './nx-welcome';
@@ -7,13 +7,13 @@ import NxWelcome from './nx-welcome';
 import { Route, Routes, Link } from 'react-router-dom';
 
 export function App() {
-  return ( 
+  return (
     <>
 
       {/* START: routes */}
       {/* These routes and navigation have been generated for you */}
       {/* Feel free to move and update them to fit your needs */}
-      
+
       <Routes>
         <Route
           path="/"
@@ -29,6 +29,7 @@ export function App() {
         />
         <Route path="/login" element={ <Login /> } />
         <Route path="/dashboard" element={ <Dashboard /> } />
+        <Route path="/test" element={ <Test /> } />
       </Routes>
       {/* END: routes */}
     </>

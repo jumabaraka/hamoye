@@ -1,40 +1,44 @@
 /* eslint-disable @nrwl/nx/enforce-module-boundaries */
-import { useAuthState } from 'react-firebase-hooks/auth';
-import styles from './dashboard.module.css';
-import { auth } from '@hamoye/flight-react/auth';
-import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import styles from './test.module.css';
 import { Flight } from '@hamoye/shared/data-access';
 
 /* eslint-disable-next-line */
-export interface DashboardProps {}
+export interface TestProps {}
 
-export function Dashboard(props: DashboardProps) {
+export function Test(props: TestProps) {
 
-  const [flights, setFlights] = useState<Flight[]>([]); // [1
-  const [user, loading] = useAuthState(auth);
-  const navigate = useNavigate();
-  const begin = new Date(1517227200 * 1000).toISOString();
-  const end = new Date(1517230800 * 1000).toISOString();
+  const [flights, setFlights] = useState<any[]>([]);
 
   useEffect(() => {
-    if (loading) return;
-    if (!user) navigate('/login');
+    const fetchFlights = async() => {
+      const res = await fetch('http://localhost:8080/flights');
+      const data = await res.json();
+      const flightData = data.map((flight: any) => ({
+        airport: flight.estDepartureAirport || flight.estArrivalAirport,
+        time: new Date(flight.lastSeen).toLocaleTimeString(),
+        arriving: flight.estArrivalAirport ? 1 : 0,
+        departing: flight.estDepartureAirport ? 1 : 0,
+      }))
+      setFlights(flightData);
+    };
+    fetchFlights();
+  }, []);
 
-    fetch('http://localhost:8080/flights')
-      .then((res) => res.json())
-      .then((data) => setFlights(data));
-  }, [user, loading, navigate]);
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString('en-US', {
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: true,
+      timeZoneName: 'short',
+    });
+  }
 
   const filteredFlights = flights.filter(
-    (flight) => flight.estArrivalAirport !== ""
+    (flight) => flight.airport !== ""
   );
 
-  const formatTime = (time: number) => {
-    const date = new Date(time * 1000);
-    return date.toISOString();
-  };
 
   return (
     <div>
@@ -96,14 +100,14 @@ export function Dashboard(props: DashboardProps) {
                   key={index}
                   className="bg-white border-b "
                 >
-                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{flight.estArrivalAirport}</td>
+                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{flight.airport}</td>
                   <td className="px-6 py-4">
-                    { begin } - { end }
+                    {flight.time }
                   </td>
                   <td className="px-6 py-4 ">
-                    {formatTime(flight.firstSeen)}
+                    {flight.arriving}
                   </td>
-                  <td className="px-6 py-4">{formatTime(flight.lastSeen)}</td>
+                  <td className="px-6 py-4">{flight.departing}</td>
 
                 </tr>
               ))}
@@ -116,4 +120,4 @@ export function Dashboard(props: DashboardProps) {
   );
 }
 
-export default Dashboard;
+export default Test;

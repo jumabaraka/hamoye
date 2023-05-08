@@ -1,0 +1,139 @@
+version: 2.1
+
+orbs:
+  nx: nrwl/nx@1.6.1
+  gcp-gcr: circleci/gcp-gcr@0.15.1
+  gcp-cloud-run: circleci/gcp-cloud-run@1.0.2
+
+parameters:
+  run-build-app-flight-angular:
+    type: boolean
+    default: false
+  run-build-app-flight-react:
+    type: boolean
+    default: false
+
+jobs:
+  agent:
+    docker:
+      - image: cimg/go:1.19.4-node
+    parameters:
+      ordinal:
+        type: integer
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: npm i --force
+      - run:
+          name: Start the agent << parameters.ordinal >>
+          command: npx nx-cloud start-agent
+          no_output_timeout: 60m
+
+  main:
+    docker:
+      - image: cimg/go:1.19.4-node
+    parallelism: 1
+    environment:
+      NX_CLOUD_DISTRIBUTED_EXECUTION: 'true'
+    parameters:
+      app:
+        type: string
+      source:
+        type: string
+      version:
+        type: string
+    steps:
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: Install dependencies
+          command: npm i --force
+      - nx/set-shas:
+          main-branch-name: 'main'
+      - run:
+          name: Initialize the Nx Cloud distributed CI run
+          command: npx nx-cloud start-ci-run --stop-agents-after="build" --agent-count=2
+      - run:
+          name: Check format
+          command: npx nx-cloud record -- npx nx format:check --base=$NX_BASE --head=$NX_HEAD
+      - run:
+          name: Run lint
+          command: npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=lint --parallel=2
+      - run:
+          name: Run test
+          command: npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=test --parallel=2 --configuration=ci
+
+      - run:
+          name: Run build
+          command: npx nx affected --base=$NX_BASE --head=$NX_HEAD --target=build --parallel=2
+
+      - run:
+          name: Stop all agents
+          command: npx nx-cloud stop-all-agents
+          when: always
+
+      - run:
+          name: GCP Credentials
+          command: |
+            echo 'export PATH=~$PATH:~/.local/bin' >> $BASH_ENV
+            echo ${GCP_PROJECT_KEY} | base64 --decode --ignore-garbage > $HOME/gcloud-service-key.json
+            echo 'export GOOGLE_CLOUD_KEYS=$(cat $HOME/gcloud-service-key.json)' >> $BASH_ENV
+            echo 'export TAG=${CIRCLE_SHA1}' >> $BASH_ENV
+            echo source $BASH_ENV
+            cat $HOME/gcloud-service-key.json
+            ls
+
+      - run:
+          name: Build Docker image
+          command: docker build -t eu.gcr.io/$GOOGLE_PROJECT_ID/<<parameters.app>>:tag<<parameters.version>> -f <<parameters.source>> .
+
+      - gcp-gcr/gcr-auth:
+          gcloud-service-key: GOOGLE_CLOUD_KEYS
+          google-project-id: GOOGLE_PROJECT_ID
+          google-compute-zone: GOOGLE_COMPUTE_ZONE
+
+      - gcp-gcr/push-image:
+          google-project-id: GOOGLE_PROJECT_ID
+          registry-url: 'eu.gcr.io'
+          image: '<<parameters.app>>'
+          tag: tag<<parameters.version>>
+
+      - gcp-cloud-run/deploy:
+          platform: managed
+          image: 'eu.gcr.io/${GOOGLE_PROJECT_ID}/<<parameters.app>>:tag<<parameters.version>>'
+          service-name: '<<parameters.app>>'
+          region: $GOOGLE_COMPUTE_ZONE
+
+
+workflows:
+  app-flight-angular:
+    when: << pipeline.parameters.run-build-app-flight-angular >>
+    jobs:
+      - agent:
+          name: Nx Cloud Agent << matrix.ordinal >>
+          matrix:
+            parameters:
+              ordinal: [1, 2]
+      - main:
+          name: Nx Cloud Main
+          app: flight-angular
+          source: ./apps/flight-angular/Dockerfile
+          version: 0.0.1
+
+  app-flight-react:
+    when: << pipeline.parameters.run-build-app-flight-react >>
+    jobs:
+      - agent:
+          name: Nx Cloud Agent << matrix.ordinal >>
+          matrix:
+            parameters:
+              ordinal: [1, 2]
+      - main:
+          name: Nx Cloud Main
+          app: flight-react
+          source: ./apps/flight-react/Dockerfile
+          version: 0.0.1
+
+# VS Code Extension Version: 1.5.1

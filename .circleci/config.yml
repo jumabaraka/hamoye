@@ -1,0 +1,22 @@
+version: 2.1
+
+setup: true
+
+orbs:
+  path-filtering: circleci/path-filtering@0.1.1
+
+workflows:
+  marketplace:
+    jobs:
+      - path-filtering/filter:
+          filters:
+            branches:
+              ignore: main
+          name: check-updated-files
+          base-revision: main
+          config-path: .circleci/continue_config.yml
+          mapping: |
+            apps/flight-angular/.* run-build-app-flight-angular true
+            apps/flight-react/.* run-build-app-flight-react true
+
+# VS Code Extension Version: 1.5.1
