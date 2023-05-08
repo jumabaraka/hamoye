@@ -28,10 +28,10 @@ export function Test(props: TestProps) {
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleDateString('en-US', {
-      hour: 'numeric',
-      minute: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: true,
-      timeZoneName: 'short',
+      timeZone: 'America/Chicago',
     });
   }
 

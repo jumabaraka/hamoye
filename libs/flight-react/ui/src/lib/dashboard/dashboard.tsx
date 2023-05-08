@@ -12,7 +12,7 @@ export interface DashboardProps {}
 
 export function Dashboard(props: DashboardProps) {
 
-  const [flights, setFlights] = useState<Flight[]>([]); // [1
+  const [flights, setFlights] = useState<any[]>([]); // [1
   const [user, loading] = useAuthState(auth);
   const navigate = useNavigate();
   const begin = new Date(1517227200 * 1000).toISOString();
@@ -91,22 +91,6 @@ export function Dashboard(props: DashboardProps) {
               </tr>
             </thead>
             <tbody>
-              {filteredFlights.map((flight, index) => (
-                <tr
-                  key={index}
-                  className="bg-white border-b "
-                >
-                  <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{flight.estArrivalAirport}</td>
-                  <td className="px-6 py-4">
-                    { begin } - { end }
-                  </td>
-                  <td className="px-6 py-4 ">
-                    {formatTime(flight.firstSeen)}
-                  </td>
-                  <td className="px-6 py-4">{formatTime(flight.lastSeen)}</td>
-
-                </tr>
-              ))}
             </tbody>
           </table>
         </div>

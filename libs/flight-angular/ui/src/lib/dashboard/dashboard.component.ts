@@ -33,7 +33,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
       this.flights = flights;
       const flightData = this.flights.map((flight: any) => ({
         airport: flight.estDepartureAirport || flight.estArrivalAirport,
-        time: new Date(flight.lastSeen * 1000).toLocaleTimeString(),
+        time: new Date(flight.lastSeen * 1000).toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: true,
+          timeZone: 'America/Chicago'
+        }),
         arriving: flight.estArrivalAirport ? 1 : 0,
         departing: flight.estDepartureAirport ? 1 : 0,
       }))
